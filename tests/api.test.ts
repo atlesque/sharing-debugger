@@ -42,6 +42,7 @@ test('rate-limit denial prevents inspection', async () => {
 test('image preview uses protected bounded raster response', async () => {
   const response = await worker.fetch(new Request('https://app.example.com/api/image?url=https%3A%2F%2Fexample.com%2Fimage.jpg', { headers: { 'sec-fetch-site': 'same-origin', 'cf-access-jwt-assertion': jwt } }), env);
   assert.equal(response.status, 200); assert.equal(response.headers.get('content-type'), 'image/jpeg');
+  assert.equal(response.headers.get('cache-control'), 'private, max-age=600');
   assert.equal((await response.arrayBuffer()).byteLength, 3);
 });
 test('authenticated static asset requests pass through the same login validation', async () => {

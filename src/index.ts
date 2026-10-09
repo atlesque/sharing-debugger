@@ -8,9 +8,10 @@ const securityHeaders = {
   'permissions-policy': 'camera=(), microphone=(), geolocation=()',
   'content-security-policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
 };
-function secure(response: Response) {
+function secure(response: Response, cacheControl = 'no-store') {
   const result = new Response(response.body, response);
   for (const [key, value] of Object.entries(securityHeaders)) result.headers.set(key, value);
+  result.headers.set('cache-control', cacheControl);
   return result;
 }
 export default {
@@ -28,7 +29,7 @@ export default {
         if (!response.ok || !['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/avif'].includes(type)) {
           await response.body?.cancel(); throw new InspectionError('Unsupported image.');
         }
-        return secure(new Response(await readBytes(response, 2_000_000), { headers: { 'content-type': type } }));
+        return secure(new Response(await readBytes(response, 2_000_000), { headers: { 'content-type': type } }), 'private, max-age=600');
       } catch { return secure(new Response('Image could not be loaded', { status: 400 })); }
       finally { clearTimeout(timer); }
     }
