@@ -1,0 +1,11 @@
+node_modules/
+.wrangler/
+.dev.vars*
+.env*
+!.env.example
+wrangler.deploy.json
+worker-configuration.d.ts
+.local/
+dist/
+.DS_Store
+*.log
