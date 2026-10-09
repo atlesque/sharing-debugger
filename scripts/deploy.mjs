@@ -1,10 +1,14 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { parseEnv } from 'node:util';
-const local = parseEnv(await readFile('.env.local', 'utf8'));
+// .env.local is optional so CI (e.g. Workers Builds) can supply settings as build variables.
+const local = await readFile('.env.local', 'utf8').then(parseEnv, error => {
+  if (error.code === 'ENOENT') return {};
+  throw error;
+});
 const settings = { ...local, ...process.env };
 for (const key of ['CLOUDFLARE_ACCOUNT_ID', 'APP_DOMAIN', 'ACCESS_TEAM_DOMAIN', 'ACCESS_AUD', 'ALLOWED_EMAIL']) {
-  if (!settings[key]) throw new Error(`Set ${key} in .env.local (see .env.example).`);
+  if (!settings[key]) throw new Error(`Set ${key} in .env.local or the environment (see .env.example).`);
 }
 const host = new URL(`https://${settings.APP_DOMAIN}`);
 if (host.host !== settings.APP_DOMAIN || host.pathname !== '/') throw new Error('APP_DOMAIN must be a hostname.');
