@@ -33,19 +33,24 @@ function preview(label, data, url, search = false) {
 }
 function render(data) {
   report = data;
-  $('empty').hidden = true; $('results').hidden = false;
+  $('results').hidden = false;
   $('result-title').textContent = data.title || 'Untitled page'; $('result-url').textContent = data.finalURL;
-  $('summary').replaceChildren(...[`HTTP ${data.status}`, `${data.durationMs} ms`, `${data.redirects.length} redirects`, `${data.meta.length} meta tags`, new Date(data.inspectedAt).toLocaleTimeString()].map(text => node('span', text, 'badge')));
-  $('previews').replaceChildren(preview('Facebook / Open Graph', data.previews.social, data.finalURL), preview('X / Twitter', data.previews.twitter, data.finalURL), preview('Search result', data.previews.search, data.previews.search.url, true));
-  $('warning-count').textContent = data.warnings.length;
-  $('warnings').replaceChildren(...(data.warnings.length ? data.warnings : ['Core share metadata is present.']).map(text => node('li', text)));
+  const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
+  $('summary').replaceChildren(
+    node('span', `HTTP ${data.status}`, data.status >= 200 && data.status < 300 ? 'badge ok' : 'badge warn'),
+    ...[`${data.durationMs} ms`, plural(data.redirects.length, 'redirect'), plural(data.meta.length, 'meta tag'), new Date(data.inspectedAt).toLocaleTimeString()].map(text => node('span', text, 'badge')),
+  );
+  $('previews').replaceChildren(preview('Facebook · Open Graph', data.previews.social, data.finalURL), preview('X · Twitter card', data.previews.twitter, data.finalURL), preview('Google search', data.previews.search, data.previews.search.url, true));
+  $('warning-count').textContent = data.warnings.length || 'All clear';
+  $('warning-count').className = data.warnings.length ? 'count' : 'count clear';
+  $('warnings').replaceChildren(...(data.warnings.length ? data.warnings.map(text => node('li', text)) : [node('li', 'Core share metadata is present.', 'ok')]));
   const structured = node('pre', JSON.stringify(data.structuredData, null, 2));
   $('details').replaceChildren(
-    detail('Page & search metadata', table([['Title', data.title], ['Description', data.description], ['Canonical', data.canonical], ['Language', data.language], ['Robots', data.robots]])),
+    detail('Page & search', table([['Title', data.title], ['Description', data.description], ['Canonical', data.canonical], ['Language', data.language], ['Robots', data.robots]])),
     detail(`Open Graph (${data.openGraph.length})`, table(data.openGraph.map(item => [item.key, item.content]))),
     detail(`Twitter cards (${data.twitter.length})`, table(data.twitter.map(item => [item.key, item.content]))),
     detail(`All meta tags (${data.meta.length})`, table(data.meta.map(item => [item.key, item.content]))),
-    detail(`Links & alternate languages (${data.links.length})`, table(data.links.map(item => [item.rel + (item.hreflang ? ` (${item.hreflang})` : ''), item.href]))),
+    detail(`Links & alternates (${data.links.length})`, table(data.links.map(item => [item.rel + (item.hreflang ? ` (${item.hreflang})` : ''), item.href]))),
     detail(`Structured data (${data.structuredData.length})`, structured),
     detail(`Headings (${data.headings.length})`, table(data.headings.map(item => [item.level, item.text]))),
     detail('HTTP headers', table(Object.entries(data.headers))),
