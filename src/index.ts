@@ -8,6 +8,19 @@ const securityHeaders = {
   'permissions-policy': 'camera=(), microphone=(), geolocation=()',
   'content-security-policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
 };
+// Social crawlers need absolute URLs, but the hostname is only known at deploy time.
+const absolutize = (origin: string) => ({
+  element(element: Element) {
+    for (const name of ['href', 'content']) {
+      const value = element.getAttribute(name);
+      if (value?.startsWith('/')) element.setAttribute(name, origin + value);
+    }
+  },
+});
+function withAbsoluteURLs(response: Response, origin: string) {
+  if (!response.headers.get('content-type')?.startsWith('text/html')) return response;
+  return new HTMLRewriter().on('link[rel="canonical"], meta[property^="og:"], meta[name^="twitter:"]', absolutize(origin)).transform(response);
+}
 function secure(response: Response, cacheControl = 'no-store') {
   const result = new Response(response.body, response);
   for (const [key, value] of Object.entries(securityHeaders)) result.headers.set(key, value);
@@ -35,7 +48,7 @@ export default {
     }
     if (url.pathname !== '/api/inspect') {
       if (!['GET', 'HEAD'].includes(request.method)) return secure(new Response('Method not allowed', { status: 405 }));
-      return secure(await env.ASSETS.fetch(request));
+      return secure(withAbsoluteURLs(await env.ASSETS.fetch(request), url.origin));
     }
     if (request.method !== 'POST') return secure(new Response('Method not allowed', { status: 405, headers: { allow: 'POST' } }));
     if (request.headers.get('origin') !== url.origin || !request.headers.get('content-type')?.startsWith('application/json')) {

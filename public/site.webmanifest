@@ -1,0 +1,15 @@
+{
+  "name": "Sharing Debugger",
+  "short_name": "Sharing Debugger",
+  "description": "Preview how a link looks when shared on Facebook, X and in Google search.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f4fb",
+  "theme_color": "#5546f0",
+  "icons": [
+    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any" },
+    { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any maskable" }
+  ]
+}
