@@ -42,22 +42,27 @@ function table(rows) {
   return el;
 }
 function section(title, content) { const el = node('section', undefined, 'hood-section'); el.append(node('h4', title), content); return el; }
+// Share images load on their own; each URL is fetched once and shared by every card that shows it.
+const images = new Map();
+function loadImage(src) {
+  if (!images.has(src)) images.set(src, new Promise((resolve, reject) => {
+    const img = new Image(); img.onload = resolve; img.onerror = reject; img.src = '/api/image?url=' + encodeURIComponent(src);
+  }));
+  return images.get(src);
+}
 function preview(data, url, search = false) {
   const card = node('div', undefined, search ? 'card search' : 'card');
   if (!search) {
     const slot = node('div', undefined, 'image-slot');
-    slot.append(icon('image'), node('span', data.image ? 'Share image found' : 'No share image'));
     if (data.image) {
-      const button = node('button', 'Load image'); button.type = 'button';
-      button.addEventListener('click', () => {
-        button.disabled = true; button.textContent = 'Loading…';
-        const img = node('img'); img.alt = 'Share card image';
-        img.onload = () => slot.replaceChildren(img);
-        img.onerror = () => slot.replaceChildren(icon('image'), node('span', 'Image could not be loaded'));
-        img.src = '/api/image?url=' + encodeURIComponent(data.image);
+      slot.classList.add('loading'); slot.setAttribute('aria-busy', 'true'); slot.setAttribute('aria-label', 'Loading share image');
+      loadImage(data.image).then(() => {
+        const img = node('img'); img.alt = 'Share card image'; img.src = '/api/image?url=' + encodeURIComponent(data.image);
+        slot.replaceChildren(img);
+      }, () => slot.replaceChildren(icon('image'), node('span', 'Image could not be loaded'))).finally(() => {
+        slot.classList.remove('loading'); slot.removeAttribute('aria-busy'); slot.removeAttribute('aria-label');
       });
-      slot.append(button);
-    }
+    } else slot.append(icon('image'), node('span', 'No share image'));
     card.append(slot);
   }
   const body = node('div', undefined, 'card-body');
@@ -66,7 +71,7 @@ function preview(data, url, search = false) {
   card.append(body); return card;
 }
 function render(data) {
-  report = data;
+  report = data; images.clear();
   $('results').hidden = false;
   $('result-title').textContent = data.title || 'Untitled page'; $('result-url').textContent = data.finalURL;
   const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
