@@ -44,7 +44,11 @@ npm test
 npm run build
 ```
 
-GitHub Actions performs these checks without Cloudflare credentials. Deployment is manual so a fork can choose its own account and settings.
+GitHub Actions performs these checks without Cloudflare credentials. Deployment is manual by default so a fork can choose its own account and settings.
+
+## Automatic deploys
+
+To deploy on every push, connect the repository to the Worker with [Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/) (Worker → Settings → Build). Set the branch to `main`, leave the build command empty, set the deploy command to `npm run deploy`, and add `CLOUDFLARE_ACCOUNT_ID`, `APP_DOMAIN`, `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, and `ALLOWED_EMAIL` as build variables. `npm run deploy` reads them from the environment when `.env.local` is absent. Keep non-production branch builds disabled; preview URLs are off.
 
 ## Security and privacy
 
@@ -67,7 +71,7 @@ DNS checks are defense in depth, not a pinned connection: the subsequent fetch u
 | `ALLOWED_EMAIL` | The single permitted identity |
 | `CLOUDFLARE_API_TOKEN` | Optional deployment credential; local only |
 
-`npm run deploy` reads `.env.local`; environment variables take precedence. Re-run it after configuration changes. To retire the instance, remove its custom-domain route and Worker, then remove only its dedicated Access application and any unused dedicated policy.
+`npm run deploy` reads `.env.local` when present; environment variables take precedence. Re-run it after configuration changes. To retire the instance, remove its custom-domain route and Worker, then remove only its dedicated Access application and any unused dedicated policy.
 
 ## License
 
