@@ -1,12 +1,68 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Sharing Debugger</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
-<body><div class="shell"><header><a class="brand" href="/">↗ <span>Sharing Debugger</span></a><span class="private">● Private workspace</span></header>
-<main><div class="eyebrow">A LOOK BEFORE YOU SHARE</div><h1>Make every link<br><span>look its best.</span></h1><p class="intro">See what crawlers find. Inspect your page’s metadata,<br class="desktop"> preview its share cards, and spot what’s missing.</p>
-<form id="inspect-form"><label for="url">Page URL</label><div class="input-row"><input id="url" name="url" type="url" placeholder="https://example.com/your-page" required autocomplete="off"><button id="submit" type="submit">Inspect link <span>↗</span></button></div><p class="hint">Public HTTP & HTTPS pages only · Fresh fetch on every inspection</p></form>
-<p id="error" role="alert" hidden></p><div id="loading" role="status" hidden>Fetching the page and reading its metadata…</div>
-<section id="results" hidden><div class="result-top"><div><div class="eyebrow">INSPECTION COMPLETE</div><h2 id="result-title"></h2><p id="result-url"></p></div><button id="download" class="secondary" type="button">Export JSON ↓</button></div><div id="summary" class="summary"></div>
-<div class="section-heading"><h2>Preview your link</h2><span>Illustrative previews · Platforms may render differently</span></div><div id="previews" class="previews"></div>
-<section class="panel"><h2>Things to check <span id="warning-count"></span></h2><ul id="warnings"></ul></section>
-<div class="section-heading"><h2>Under the hood</h2><span>Metadata from the server-delivered HTML</span></div><div id="details"></div></section>
-<section id="empty" class="empty"><div class="empty-icon">⌕</div><div><h2>Your next share, decoded.</h2><p>Open Graph, Twitter cards, search metadata, structured data,<br class="desktop"> redirects, and more — all in one place.</p></div></section>
-</main><footer><span>Built on Cloudflare Workers</span><span>Server-side HTML · No JavaScript execution · No saved history</span></footer></div></body></html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="color-scheme" content="light dark">
+<title>Sharing Debugger</title>
+<link rel="stylesheet" href="/style.css">
+<script src="/theme.js"></script>
+<script src="/app.js" defer></script>
+</head>
+<body>
+<div class="band">
+  <div class="shell">
+    <header>
+      <a class="brand" href="/"><span class="logo"><svg class="icon" aria-hidden="true"><use href="/icons.svg#arrow-up-right"/></svg></span>Sharing Debugger</a>
+      <div class="theme" role="radiogroup" aria-label="Theme">
+        <button type="button" role="radio" data-theme-option="auto" aria-label="Auto theme" title="Auto"><svg class="icon" aria-hidden="true"><use href="/icons.svg#monitor"/></svg></button>
+        <button type="button" role="radio" data-theme-option="light" aria-label="Light theme" title="Light"><svg class="icon" aria-hidden="true"><use href="/icons.svg#sun"/></svg></button>
+        <button type="button" role="radio" data-theme-option="dark" aria-label="Dark theme" title="Dark"><svg class="icon" aria-hidden="true"><use href="/icons.svg#moon"/></svg></button>
+      </div>
+    </header>
+
+    <form id="inspect-form" class="composer">
+      <label for="url" class="visually-hidden">Page URL</label>
+      <div class="field">
+        <svg class="icon field-icon" aria-hidden="true"><use href="/icons.svg#link"/></svg>
+        <input id="url" name="url" type="url" placeholder="Enter a URL to inspect" required autocomplete="off" spellcheck="false">
+        <button id="submit" type="submit"><span class="spinner" aria-hidden="true"></span>Inspect<svg class="icon" aria-hidden="true"><use href="/icons.svg#arrow-up-right"/></svg></button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<main class="shell">
+  <p id="error" role="alert" hidden></p>
+  <p id="loading" class="visually-hidden" role="status" hidden>Fetching page…</p>
+
+  <section id="results" hidden>
+    <div class="result-top">
+      <div class="result-meta">
+        <h2 id="result-title"></h2>
+        <p id="result-url"></p>
+      </div>
+      <button id="download" class="ghost" type="button"><svg class="icon" aria-hidden="true"><use href="/icons.svg#download"/></svg>JSON</button>
+    </div>
+    <div id="summary" class="summary"></div>
+
+    <div class="tabs" role="tablist" aria-label="Preview">
+      <button type="button" role="tab" id="tab-facebook" aria-controls="panel-facebook" aria-selected="true"><svg class="icon" aria-hidden="true"><use href="/icons.svg#facebook"/></svg>Facebook</button>
+      <button type="button" role="tab" id="tab-x" aria-controls="panel-x" aria-selected="false" tabindex="-1"><svg class="icon" aria-hidden="true"><use href="/icons.svg#twitter"/></svg>X</button>
+      <button type="button" role="tab" id="tab-search" aria-controls="panel-search" aria-selected="false" tabindex="-1"><svg class="icon" aria-hidden="true"><use href="/icons.svg#search"/></svg>Search</button>
+    </div>
+    <div id="panel-facebook" role="tabpanel" aria-labelledby="tab-facebook" class="panel"></div>
+    <div id="panel-x" role="tabpanel" aria-labelledby="tab-x" class="panel" hidden></div>
+    <div id="panel-search" role="tabpanel" aria-labelledby="tab-search" class="panel" hidden></div>
+
+    <div id="checks" class="checks"></div>
+
+    <details class="hood">
+      <summary>Under the hood<svg class="icon" aria-hidden="true"><use href="/icons.svg#chevron-down"/></svg></summary>
+      <div id="details"></div>
+    </details>
+  </section>
+</main>
+</body>
+</html>
