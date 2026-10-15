@@ -143,6 +143,9 @@ main { padding-bottom: 64px; }
 .checks.warn { background: var(--warn-soft); border-color: var(--warn-border); color: var(--warn); }
 .checks-head { display: flex; align-items: center; gap: 10px; font-size: 14px; }
 .checks-head .icon { width: 18px; height: 18px; }
+.copy-prompt { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--warn-border); background: var(--surface); color: var(--warn); font-size: 12.5px; font-weight: 500; transition: border-color .15s; }
+.copy-prompt:hover { border-color: var(--warn-dot); }
+.checks-head .copy-prompt .icon { width: 14px; height: 14px; }
 .checks ul { list-style: none; margin: 10px 0 0; padding: 10px 0 0 6px; border-top: 1px solid var(--warn-border); }
 .checks li { display: flex; align-items: center; gap: 10px; padding: 3px 0; font-size: 13.5px; font-family: var(--mono); }
 .checks li::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--warn-dot); }
