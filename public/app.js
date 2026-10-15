@@ -170,15 +170,27 @@ function render(data) {
     section('Redirect chain', table(data.redirects.map(item => [`${item.status} ${item.url}`, item.location]))),
   );
 }
-$('inspect-form').addEventListener('submit', async event => {
-  event.preventDefault(); $('error').hidden = true; $('loading').hidden = false; $('submit').disabled = true; $('results').hidden = true;
+let latest = 0;
+async function inspect(url) {
+  const current = ++latest;
+  $('error').hidden = true; $('loading').hidden = false; $('submit').disabled = true; $('results').hidden = true;
   try {
-    const response = await fetch('/api/inspect', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: $('url').value.trim() }) });
+    const response = await fetch('/api/inspect', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url }) });
     if (response.redirected || !response.headers.get('content-type')?.includes('application/json')) throw new Error('Your login has expired. Reload the page to sign in again.');
-    const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Inspection failed.'); render(data);
-  } catch (error) { $('error').textContent = error.message; $('error').hidden = false; }
-  finally { $('loading').hidden = true; $('submit').disabled = false; }
+    const data = await response.json(); if (current !== latest) return; if (!response.ok) throw new Error(data.error || 'Inspection failed.'); render(data);
+  } catch (error) { if (current === latest) { $('error').textContent = error.message; $('error').hidden = false; } }
+  finally { if (current === latest) { $('loading').hidden = true; $('submit').disabled = false; } }
+}
+function sharedURL() { return new URLSearchParams(location.search).get('url')?.trim() || ''; }
+function inspectShared() { const url = sharedURL(); if (!url) return; $('url').value = url; inspect(url); }
+$('inspect-form').addEventListener('submit', event => {
+  event.preventDefault();
+  const url = $('url').value.trim();
+  if (url !== sharedURL()) { const next = new URL(location.href); next.searchParams.set('url', url); history.pushState(null, '', next); }
+  inspect(url);
 });
+window.addEventListener('popstate', () => { if (sharedURL()) inspectShared(); else { latest++; $('loading').hidden = true; $('submit').disabled = false; $('url').value = ''; $('results').hidden = true; $('error').hidden = true; } });
+inspectShared();
 $('download').addEventListener('click', () => {
   if (!report) return;
   const url = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' }));
