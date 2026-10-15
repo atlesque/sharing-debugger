@@ -70,6 +70,73 @@ function preview(data, url, search = false) {
   body.append(node('span', hostname, 'card-host'), node('h3', data.title || '(No title)'), node('p', data.description || '(No description)'));
   card.append(body); return card;
 }
+// A prompt a coding agent can act on: the page, every issue with how to fix it, and the tags the page has now.
+const fixes = [
+  [/^Missing page title/, 'Add a <title> of about 50 to 60 characters that describes this page.'],
+  [/^Missing meta description/, 'Add <meta name="description" content="…"> with a 120 to 160 character summary of this page.'],
+  [/^Missing og:title/, 'Add <meta property="og:title" content="…">, usually the page title without the site name suffix.'],
+  [/^Missing og:description/, 'Add <meta property="og:description" content="…">, one or two sentences; the meta description is a good default.'],
+  [/^Missing og:image/, 'Add <meta property="og:image" content="https://…"> with an absolute URL to a 1200×630 PNG or JPG under 5 MB, plus og:image:width, og:image:height and og:image:alt. Use an existing hero or brand image if the project has one; if not, say so instead of inventing one.'],
+  [/^Missing og:url/, 'Add <meta property="og:url" content="…"> with the absolute canonical URL of this page.'],
+  [/^Missing canonical/, 'Add <link rel="canonical" href="…"> with the absolute, preferred URL of this page.'],
+  [/^Missing twitter:card/, 'Add <meta name="twitter:card" content="summary_large_image"> (or "summary" if the page has no share image). X falls back to the og: tags for title, description and image.'],
+  [/^A robots directive/, 'A robots meta tag contains noindex. Remove it unless this page is meant to stay out of search results.'],
+  [/^X-Robots-Tag/, 'The server sends an X-Robots-Tag header with noindex. Remove it from the server or hosting config unless this page is meant to stay out of search results.'],
+  [/^Invalid JSON-LD/, 'Fix the syntax of the <script type="application/ld+json"> block that does not parse as JSON (shown below).'],
+  [/^Multiple /, 'Keep only one of these tags so every crawler reads the same value.'],
+  [/^The page returned HTTP/, 'Make the page return HTTP 200; crawlers may not show a preview for error responses.'],
+];
+function agentPrompt(data) {
+  const lines = [
+    'Fix the missing and broken link-preview metadata (Open Graph, Twitter/X card and SEO tags) for this page in this codebase.',
+    '',
+    `Page: ${data.finalURL}`,
+  ];
+  if (data.requestedURL && data.requestedURL !== data.finalURL) lines.push(`Requested as: ${data.requestedURL} (redirected)`);
+  lines.push('', '## Issues to fix', '');
+  data.warnings.forEach((warning, index) => {
+    const fix = fixes.find(([pattern]) => pattern.test(warning))?.[1];
+    lines.push(`${index + 1}. ${warning}${fix ? ` ${fix}` : ''}`);
+  });
+  const value = text => text ? `"${text}"` : '(none)';
+  lines.push('', '## What the page has now', '',
+    `- Title: ${value(data.title)}`,
+    `- Meta description: ${value(data.description)}`,
+    `- Canonical: ${value(data.canonical)}`,
+    `- Language: ${value(data.language)}`);
+  const h1 = data.headings.find(item => item.level === 'h1');
+  if (h1) lines.push(`- First h1: ${value(h1.text)}`);
+  for (const item of [...data.openGraph, ...data.twitter]) lines.push(`- ${item.key}: ${value(item.content)}`);
+  const invalid = data.structuredData.filter(item => !item.valid);
+  if (invalid.length) lines.push('', 'JSON-LD that does not parse:', ...invalid.map(item => '```\n' + (item.raw || '').trim().slice(0, 2000) + '\n```'));
+  lines.push('', '## How to fix', '',
+    '- Find where this page\'s <head> is rendered (layout, template, framework metadata API or SEO component) and add the tags there, so every page using it gets them. Prefer page-specific values where the framework supports them.',
+    '- Base the new text on the page\'s existing title, description and content. Do not invent facts.',
+    '- Use absolute https URLs for og:url, og:image and the canonical link.',
+    '- Do not remove or change tags that are already correct.',
+    '- When you are done, list what you changed and anything you could not fix.');
+  return lines.join('\n');
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return; } catch {}
+  const area = node('textarea'); area.value = text; area.style.position = 'fixed'; area.style.opacity = '0';
+  document.body.append(area); area.select();
+  try { if (!document.execCommand('copy')) throw new Error('Copy failed'); } finally { area.remove(); }
+}
+function copyPromptButton(data) {
+  const button = node('button', undefined, 'copy-prompt'); button.type = 'button';
+  const label = node('span', 'Copy agent prompt');
+  button.title = 'Copy a prompt for a coding agent to fix these issues';
+  button.append(icon('copy'), label);
+  let timer;
+  button.addEventListener('click', async () => {
+    clearTimeout(timer);
+    try { await copyText(agentPrompt(data)); button.replaceChildren(icon('check'), label); label.textContent = 'Copied'; }
+    catch { label.textContent = 'Copy failed'; }
+    timer = setTimeout(() => { button.replaceChildren(icon('copy'), label); label.textContent = 'Copy agent prompt'; }, 2000);
+  });
+  return button;
+}
 function render(data) {
   report = data; images.clear();
   $('results').hidden = false;
@@ -87,6 +154,7 @@ function render(data) {
   const ok = !data.warnings.length;
   const head = node('div', undefined, 'checks-head');
   head.append(icon(ok ? 'circle-check' : 'triangle-alert'), node('strong', ok ? 'All share metadata present' : `${data.warnings.length} ${data.warnings.length === 1 ? 'issue' : 'issues'} to fix`));
+  if (!ok) head.append(copyPromptButton(data));
   const checks = $('checks'); checks.className = ok ? 'checks ok' : 'checks warn'; checks.replaceChildren(head);
   if (!ok) { const list = node('ul'); list.append(...data.warnings.map(text => node('li', text))); checks.append(list); }
 

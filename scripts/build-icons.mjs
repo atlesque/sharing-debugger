@@ -2,7 +2,7 @@
 // Run `npm run icons` after changing the list.
 import { readFileSync, writeFileSync } from 'node:fs';
 
-const icons = ['arrow-up-right', 'link', 'monitor', 'sun', 'moon', 'circle-check', 'triangle-alert', 'chevron-down', 'download', 'image', 'facebook', 'twitter', 'search'];
+const icons = ['arrow-up-right', 'link', 'monitor', 'sun', 'moon', 'circle-check', 'triangle-alert', 'chevron-down', 'download', 'image', 'facebook', 'twitter', 'search', 'copy', 'check'];
 const dir = new URL('../node_modules/lucide-static/icons/', import.meta.url);
 const symbols = icons.map(name => {
   const svg = readFileSync(new URL(`${name}.svg`, dir), 'utf8');
