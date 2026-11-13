@@ -181,11 +181,13 @@ async function inspect(url) {
   } catch (error) { if (current === latest) { $('error').textContent = error.message; $('error').hidden = false; } }
   finally { if (current === latest) { $('loading').hidden = true; $('submit').disabled = false; } }
 }
-function sharedURL() { return new URLSearchParams(location.search).get('url')?.trim() || ''; }
+// Accept addresses typed without a scheme, like example.com, and assume HTTPS.
+function withScheme(value) { const url = value.trim(); return !url || /^[a-z][a-z\d+.-]*:\/\//i.test(url) ? url : `https://${url.replace(/^\/+/, '')}`; }
+function sharedURL() { return withScheme(new URLSearchParams(location.search).get('url') || ''); }
 function inspectShared() { const url = sharedURL(); if (!url) return; $('url').value = url; inspect(url); }
 $('inspect-form').addEventListener('submit', event => {
   event.preventDefault();
-  const url = $('url').value.trim();
+  const url = withScheme($('url').value); $('url').value = url;
   if (url !== sharedURL()) { const next = new URL(location.href); next.searchParams.set('url', url); history.pushState(null, '', next); }
   inspect(url);
 });
