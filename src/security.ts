@@ -11,10 +11,17 @@ export function publicAddress(address: string): boolean {
   } catch { return false; }
 }
 
-export function publicURL(value: string): URL {
+// Addresses typed without a scheme, like example.com, are assumed to be HTTPS.
+export function withScheme(value: string): string {
+  const url = value.trim();
+  return !url || /^[a-z][a-z\d+.-]*:\/\//i.test(url) ? url : `https://${url.replace(/^\/+/, '')}`;
+}
+
+export function publicURL(input: string): URL {
+  const value = withScheme(input);
   if (value.length > 4096) throw new InspectionError('URL is too long.');
   let url: URL;
-  try { url = new URL(value); } catch { throw new InspectionError('Enter a complete HTTP or HTTPS URL.'); }
+  try { url = new URL(value); } catch { throw new InspectionError('Enter a valid web address, like example.com.'); }
   if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password || url.port) {
     throw new InspectionError('Use HTTP or HTTPS on the standard port, without embedded credentials.');
   }

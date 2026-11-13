@@ -2,8 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { publicURL, publicAddress, validateDNS, fetchPublic, readLimited, type Fetcher } from '../src/security';
 
-for (const value of ['http://127.0.0.1', 'http://2130706433', 'http://0x7f000001', 'http://[::1]', 'http://169.254.169.254', 'https://localhost', 'https://service.local', 'https://service.internal', 'https://example.com:8443', 'https://user:password@example.com', 'file:///etc/passwd', 'https://10.0.0.1.nip.io@localhost']) {
+for (const value of ['http://127.0.0.1', 'http://2130706433', 'http://0x7f000001', 'http://[::1]', 'http://169.254.169.254', 'https://localhost', 'https://service.local', 'https://service.internal', 'https://example.com:8443', 'https://user:password@example.com', 'file:///etc/passwd', 'https://10.0.0.1.nip.io@localhost', '127.0.0.1', 'localhost', 'example.com:8443', 'javascript:alert(1)']) {
   test(`rejects unsafe URL ${value}`, () => assert.throws(() => publicURL(value)));
+}
+for (const [value, expected] of [['merlezingt.be', 'https://merlezingt.be/'], ['  www.merlezingt.be/path?q=1 ', 'https://www.merlezingt.be/path?q=1'], ['//example.org/a', 'https://example.org/a'], ['http://example.org/', 'http://example.org/']]) {
+  test(`assumes HTTPS when no scheme is given: ${value}`, () => assert.equal(publicURL(value).href, expected));
 }
 test('accepts a public URL and strips fragment', () => assert.equal(publicURL('https://example.com/page#section').href, 'https://example.com/page'));
 for (const address of ['127.0.0.1', '10.1.2.3', '172.16.0.1', '192.168.1.1', '169.254.169.254', '100.64.0.1', '0.0.0.0', '192.0.2.1', '198.18.0.1', '224.0.0.1', '::1', 'fc00::1', 'fe80::1', '::ffff:127.0.0.1', '64:ff9b::a00:1', '2001:db8::1']) {
