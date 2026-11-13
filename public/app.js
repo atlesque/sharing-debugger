@@ -43,10 +43,14 @@ function table(rows) {
 }
 function section(title, content) { const el = node('section', undefined, 'hood-section'); el.append(node('h4', title), content); return el; }
 // Share images load on their own; each URL is fetched once and shared by every card that shows it.
+// The proxy URL carries the inspection time, so inspecting again fetches the image fresh instead of
+// showing the copy the browser cached for the previous inspection.
 const images = new Map();
+let imageVersion = '';
+const imageURL = src => '/api/image?url=' + encodeURIComponent(src) + '&v=' + encodeURIComponent(imageVersion);
 function loadImage(src) {
   if (!images.has(src)) images.set(src, new Promise((resolve, reject) => {
-    const img = new Image(); img.onload = resolve; img.onerror = reject; img.src = '/api/image?url=' + encodeURIComponent(src);
+    const img = new Image(); img.onload = resolve; img.onerror = reject; img.src = imageURL(src);
   }));
   return images.get(src);
 }
@@ -57,7 +61,7 @@ function preview(data, url, search = false) {
     if (data.image) {
       slot.classList.add('loading'); slot.setAttribute('aria-busy', 'true'); slot.setAttribute('aria-label', 'Loading share image');
       loadImage(data.image).then(() => {
-        const img = node('img'); img.alt = 'Share card image'; img.src = '/api/image?url=' + encodeURIComponent(data.image);
+        const img = node('img'); img.alt = 'Share card image'; img.src = imageURL(data.image);
         slot.replaceChildren(img);
       }, () => slot.replaceChildren(icon('image'), node('span', 'Image could not be loaded'))).finally(() => {
         slot.classList.remove('loading'); slot.removeAttribute('aria-busy'); slot.removeAttribute('aria-label');
@@ -138,7 +142,7 @@ function copyPromptButton(data) {
   return button;
 }
 function render(data) {
-  report = data; images.clear();
+  report = data; images.clear(); imageVersion = data.inspectedAt;
   $('results').hidden = false;
   $('result-title').textContent = data.title || 'Untitled page'; $('result-url').textContent = data.finalURL;
   const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;

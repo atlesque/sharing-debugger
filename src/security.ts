@@ -79,8 +79,9 @@ export async function fetchPublic(value: string, signal: AbortSignal, fetcher: F
     await validateDNS(url, signal, fetcher);
     // Fresh headers on every hop: never forward cookies, login tokens, or user headers.
     const response = await fetcher(url, {
+      // Ask CDNs in front of the site for a fresh copy, so a changed page or image shows up on the next inspection.
       redirect: 'manual', signal, cache: 'no-store',
-      headers: { 'user-agent': 'SharingDebugger/1.0', accept: 'text/html,application/xhtml+xml' },
+      headers: { 'user-agent': 'SharingDebugger/1.0', accept: 'text/html,application/xhtml+xml', 'cache-control': 'no-cache', pragma: 'no-cache' },
     });
     if ([301, 302, 303, 307, 308].includes(response.status)) {
       const location = response.headers.get('location');
